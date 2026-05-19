@@ -1,13 +1,10 @@
 /* mis_top450 annotator - pure static front-end
  *
  * Key features:
- * - Pick a local directory containing videos like 001_name.mp4 ... 450_name.mp4
+ * - Videos loaded from GitHub data/ directory (no local folder selection needed)
  * - Annotate s2_visible / s2_label / s2_confidence / notes
  * - Prev/Next navigation + keyboard shortcuts
  * - Auto-save to localStorage + CSV import/export
- *
- * Notes:
- * - Directory picker requires a secure context (https or http://localhost) and Chromium-based browsers.
  */
 
 function $(id) {
@@ -17,18 +14,16 @@ function $(id) {
 }
 
 const state = {
-  dirHandle: null,
-  files: /** @type {Array<{idx:number, name:string, fileName:string, handle:any}>} */ ([]),
+  repo: "HanaTokei/listeneremo_annotator",
+  branch: "main",
+  dataPath: "data",
+  files: /** @type {Array<{idx:number, name:string, fileName:string, downloadUrl:string}>} */ ([]),
   currentIndex: 0,
   currentObjectUrl: null,
+  blobCache: /** @type {Record<string, string>} */ ({}),
   annotations: /** @type {Record<string, {s2_visible:string, s2_label:string, s2_confidence:string, notes:string}>} */ ({}),
   storageKey: "mis_top450_annotator_v1",
 };
-
-function isSecureContextOk() {
-  // showDirectoryPicker requires secure context, but localhost is treated as secure
-  return window.isSecureContext === true;
-}
 
 function setStatus(text, kind = "info") {
   const pill = $("pillStatus");
@@ -66,7 +61,6 @@ function toCsv(rows) {
 }
 
 function parseCsv(text) {
-  // Minimal robust CSV parser: supports quoted fields and commas, but assumes no embedded newlines inside quotes.
   const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
   const rows = [];
   for (const line of lines) {
@@ -179,6 +173,12 @@ function updateStats() {
     : "";
 }
 
+async function fetchVideoBlob(downloadUrl) {
+  const resp = await fetch(downloadUrl);
+  if (!resp.ok) throw new Error(`Failed to fetch ${downloadUrl}: ${resp.status}`);
+  return resp.blob();
+}
+
 async function setCurrent(index) {
   if (index < 0 || index >= state.files.length) return;
   state.currentIndex = index;
@@ -187,7 +187,6 @@ async function setCurrent(index) {
   $("metaName").textContent = `#${item.idx}  ${item.name}`;
   $("metaPathHint").textContent = item.fileName;
 
-  // navigation buttons
   $("btnPrev").disabled = state.currentIndex <= 0;
   $("btnNext").disabled = state.currentIndex >= state.files.length - 1;
   $("btnJump").disabled = state.files.length === 0;
@@ -197,31 +196,38 @@ async function setCurrent(index) {
   $("btnClearConf").disabled = state.files.length === 0;
 
   // load video file
-  const file = await item.handle.getFile();
-  const url = URL.createObjectURL(file);
-  const video = $("video");
-
-  if (state.currentObjectUrl) URL.revokeObjectURL(state.currentObjectUrl);
-  state.currentObjectUrl = url;
-  video.autoplay = true;
-  video.src = url;
-  video.currentTime = 0;
-  video.load();
-  // Auto play on switch (prev/next/jump). If the browser blocks autoplay,
-  // user can click the play button once; subsequent switches are usually allowed.
-  // We keep audio on by default (annotation needs audio), and only surface a hint on failure.
   try {
-    const p = video.play();
-    if (p && typeof p.catch === "function") {
-      p.catch(() => {
-        setStatusDanger("自动播放被浏览器阻止：点一次播放后再切换即可自动播");
-      });
+    let url = state.blobCache[item.name];
+    if (!url) {
+      setStatus("加载中...", "info");
+      const blob = await fetchVideoBlob(item.downloadUrl);
+      url = URL.createObjectURL(blob);
+      state.blobCache[item.name] = url;
     }
-  } catch (_) {
-    setStatusDanger("自动播放失败：点一次播放后再切换即可自动播");
+
+    const video = $("video");
+    if (state.currentObjectUrl) URL.revokeObjectURL(state.currentObjectUrl);
+    state.currentObjectUrl = url;
+    video.autoplay = true;
+    video.src = url;
+    video.currentTime = 0;
+    video.load();
+
+    try {
+      const p = video.play();
+      if (p && typeof p.catch === "function") {
+        p.catch(() => {
+          setStatusDanger("自动播放被浏览器阻止：点一次播放后再切换即可自动播");
+        });
+      }
+    } catch (_) {
+      setStatusDanger("自动播放失败：点一次播放后再切换即可自动播");
+    }
+  } catch (e) {
+    console.error(e);
+    setStatusDanger(`加载失败：${e.message}`);
   }
 
-  // restore annotation fields
   const a = state.annotations[item.name] || { s2_visible: "", s2_label: "", s2_confidence: "", notes: "" };
   setCheckedValue("visible", a.s2_visible);
   setCheckedValue("label", a.s2_label);
@@ -244,7 +250,6 @@ function applyCurrentAnnotation(patch) {
   const prev = state.annotations[item.name] || { s2_visible: "", s2_label: "", s2_confidence: "", notes: "" };
   const next = { ...prev, ...patch };
 
-  // If visible == 0: clear label/conf (keep notes)
   if (next.s2_visible === "0") {
     next.s2_label = "";
     next.s2_confidence = "";
@@ -320,7 +325,6 @@ function setupEvents() {
 
   window.addEventListener("keydown", (e) => {
     if (e.target && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT")) {
-      // allow typing in inputs
       return;
     }
 
@@ -370,53 +374,43 @@ function setupEvents() {
     }
   });
 
-  $("btnPickDir").addEventListener("click", pickDirectory);
-
-  // video error / codec hint
   const video = $("video");
   video.addEventListener("error", () => {
-    // Common case on Windows Chrome: mp4v (MPEG-4 Part 2) in MP4 plays audio but shows black/no video.
     setStatusDanger("视频解码失败/黑屏：可能是编码不兼容（建议转码为 H.264/AAC）");
   });
   video.addEventListener("loadeddata", () => {
-    // If audio plays but no decoded frames, some browsers keep videoWidth==0
     if (video.readyState >= 2 && (video.videoWidth === 0 || video.videoHeight === 0)) {
       setStatusDanger("无画面：可能是 MP4 编码不被浏览器支持（建议转码为 H.264/AAC）");
     }
   });
 }
 
-async function pickDirectory() {
-  if (!("showDirectoryPicker" in window)) {
-    alert("当前浏览器不支持“选择文件夹”。建议使用 Chrome/Edge 打开（GitHub Pages 或 localhost）。");
-    return;
-  }
-  if (!isSecureContextOk()) {
-    alert("当前页面不是安全上下文（需要 https 或 http://localhost）。请不要用 file:// 直接打开。");
-    return;
-  }
+async function loadVideoList() {
+  setStatus("加载视频列表...", "info");
+  const apiUrl = `https://api.github.com/repos/${state.repo}/contents/${state.dataPath}`;
 
   try {
-    const dirHandle = await window.showDirectoryPicker();
-    state.dirHandle = dirHandle;
+    const resp = await fetch(apiUrl);
+    if (!resp.ok) throw new Error(`GitHub API failed: ${resp.status}`);
+    const data = await resp.json();
 
     const videos = [];
-    for await (const [name, handle] of dirHandle.entries()) {
-      if (handle.kind !== "file") continue;
-      if (!name.toLowerCase().endsWith(".mp4")) continue;
-      const parsed = stripPrefix(name);
+    for (const item of data) {
+      if (item.type !== "file") continue;
+      if (!item.name.toLowerCase().endsWith(".mp4")) continue;
+      const parsed = stripPrefix(item.name);
       if (!parsed) continue;
-      videos.push({ idx: parsed.idx, name: parsed.name, fileName: name, handle });
+      const downloadUrl = `https://raw.githubusercontent.com/${state.repo}/${state.branch}/${state.dataPath}/${item.name}`;
+      videos.push({ idx: parsed.idx, name: parsed.name, fileName: item.name, downloadUrl });
     }
     videos.sort((a, b) => a.idx - b.idx);
 
     if (videos.length === 0) {
-      alert("未在该文件夹内找到形如 001_xxx.mp4 的视频文件。请确认你选的是 mis_top450 文件夹。");
-      return;
+      throw new Error("未在 data/ 目录找到视频文件");
     }
 
     state.files = videos;
-    setStatus(`已载入 ${videos.length} 条`, "ok");
+    setStatus(`已载入 ${videos.length} 条视频`, "ok");
 
     $("btnPrev").disabled = false;
     $("btnNext").disabled = false;
@@ -429,7 +423,7 @@ async function pickDirectory() {
     await setCurrent(0);
   } catch (e) {
     console.error(e);
-    alert(`选择文件夹失败：${e && e.message ? e.message : String(e)}`);
+    setStatusDanger(`加载失败：${e.message}`);
   }
 }
 
@@ -486,21 +480,13 @@ function importCsv(text) {
   saveToLocalStorage();
   updateStats();
   alert(`已导入 ${applied} 条标注（按 name 对齐）。`);
-  // refresh current ui
   setCurrent(state.currentIndex);
 }
 
 function init() {
   loadFromLocalStorage();
   setupEvents();
-  setStatus("未加载视频", "info");
-  if (!isSecureContextOk()) {
-    $("metaPathHint").textContent = "提示：请通过 https 或 http://localhost 打开本页面（不要用 file://）。";
-  } else if (!("showDirectoryPicker" in window)) {
-    $("metaPathHint").textContent = "提示：建议使用 Chrome/Edge，以支持“选择文件夹”。";
-  } else {
-    $("metaPathHint").textContent = "点击右上角“选择视频文件夹”，选择 E:\\mer2026_parts\\mis_top450。";
-  }
+  loadVideoList();
 }
 
 init();
