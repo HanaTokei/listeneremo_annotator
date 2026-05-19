@@ -11,11 +11,10 @@
       <div class="topbar__left">
         <div class="brand">
           <div class="brand__title">mis_top450 标注器</div>
-          <div class="brand__sub">本地视频文件夹 + 浏览器内标注（可导入/导出 CSV）</div>
+          <div class="brand__sub">视频来自 GitHub data/ 目录，浏览器内标注（可导入/导出 CSV）</div>
         </div>
       </div>
       <div class="topbar__right">
-        <button id="btnPickDir" class="btn btn--primary">选择视频文件夹</button>
         <label class="btn btn--ghost">
           导入CSV
           <input id="fileImportCsv" type="file" accept=".csv,text/csv" hidden />
@@ -137,7 +136,7 @@
         <div class="card card--small">
           <div class="card__title">说明</div>
           <ul class="bullets">
-            <li>这个页面只负责标注，不上传视频；视频仍在你本地磁盘。</li>
+            <li>视频直接从 GitHub data/ 目录加载，无需本地选择。</li>
             <li>若你用 GitHub Pages 部署：页面是 https，支持目录选择（Chrome/Edge）。</li>
             <li>如果浏览器不支持“选择文件夹”，用“导入CSV/导出CSV”配合本地脚本也能跑。</li>
           </ul>
