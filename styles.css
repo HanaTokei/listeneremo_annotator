@@ -214,5 +214,7 @@ textarea{
   background: rgba(18,24,39,.35);
 }
 
+.labelDisplay{margin:8px 0;font-size:32px;font-weight:bold;color:var(--primary,#4da6ff);letter-spacing:2px}
+
 .bullets{margin:0;padding-left:18px;color:var(--muted);font-size:12px;line-height:1.6}
 

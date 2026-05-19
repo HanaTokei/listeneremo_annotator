@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MER2026 Track1 - 标注培训示例</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar__left">
+        <div class="brand">
+          <div class="brand__title">标注培训示例</div>
+          <div class="brand__sub">观看视频，确认你理解各类情绪标签</div>
+        </div>
+      </div>
+      <div class="topbar__right">
+        <button id="btnBack" class="btn btn--ghost" onclick="location.href='../'">返回主标注页</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="videoPane">
+        <div class="videoPane__meta">
+          <div class="metaRow">
+            <div class="pill" id="pillStatus">加载中...</div>
+            <div class="metaText" id="metaName">—</div>
+          </div>
+          <div class="metaRow metaRow--small">
+            <div class="metaHint" id="metaPathHint"></div>
+            <div class="metaHint" id="metaProgress"></div>
+          </div>
+        </div>
+
+        <div class="videoWrap">
+          <video id="video" controls playsinline preload="metadata"></video>
+        </div>
+
+        <div class="navRow">
+          <button id="btnPrev" class="btn btn--ghost" disabled>← 上一个</button>
+          <div class="navRow__center">
+            <span id="metaIdx">—</span>
+          </div>
+          <button id="btnNext" class="btn btn--ghost" disabled>下一个 →</button>
+        </div>
+
+        <div class="kbdHelp">
+          快捷键：<code>←/→</code> 上一个/下一个，<code>Space</code> 播放暂停
+        </div>
+      </section>
+
+      <section class="formPane">
+        <div class="card">
+          <div class="card__title">正确答案（培训用）</div>
+          <div class="field">
+            <div class="field__label">情绪标签</div>
+            <div id="labelDisplay" class="labelDisplay">—</div>
+          </div>
+          <div class="field__hint">
+            上面视频中听者的情绪标签应该是哪个？<br/>
+            对照下方说明确认你的理解是否正确。
+          </div>
+        </div>
+
+        <div class="card card--small">
+          <div class="card__title">情绪说明</div>
+          <ul class="bullets">
+            <li><b>1 neutral</b> - 无表情/平静</li>
+            <li><b>2 angry</b> - 生气/愤怒</li>
+            <li><b>3 happy</b> - 开心/快乐</li>
+            <li><b>4 sad</b> - 悲伤/难过</li>
+            <li><b>5 worried</b> - 担忧/焦虑</li>
+            <li><b>6 surprise</b> - 惊讶/意外</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <script src="./video_list.json"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
