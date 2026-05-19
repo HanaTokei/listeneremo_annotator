@@ -387,27 +387,14 @@ function setupEvents() {
 
 async function loadVideoList() {
   setStatus("加载视频列表...", "info");
-  const apiUrl = `https://api.github.com/repos/${state.repo}/contents/${state.dataPath}`;
 
   try {
-    const resp = await fetch(apiUrl);
-    if (!resp.ok) throw new Error(`GitHub API failed: ${resp.status}`);
-    const data = await resp.json();
-
-    const videos = [];
-    for (const item of data) {
-      if (item.type !== "file") continue;
-      if (!item.name.toLowerCase().endsWith(".mp4")) continue;
-      const parsed = stripPrefix(item.name);
-      if (!parsed) continue;
-      const downloadUrl = `https://raw.githubusercontent.com/${state.repo}/${state.branch}/${state.dataPath}/${item.name}`;
-      videos.push({ idx: parsed.idx, name: parsed.name, fileName: item.name, downloadUrl });
-    }
-    videos.sort((a, b) => a.idx - b.idx);
-
-    if (videos.length === 0) {
-      throw new Error("未在 data/ 目录找到视频文件");
-    }
+    const videos = VIDEO_LIST.map(v => ({
+      idx: v.idx,
+      name: v.name,
+      fileName: v.fileName,
+      downloadUrl: `https://raw.githubusercontent.com/${state.repo}/${state.branch}/${state.dataPath}/${v.fileName}`,
+    }));
 
     state.files = videos;
     setStatus(`已载入 ${videos.length} 条视频`, "ok");
