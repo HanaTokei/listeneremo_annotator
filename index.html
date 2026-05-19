@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MER2026 Track1 - mis_top450 标注器</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar__left">
+        <div class="brand">
+          <div class="brand__title">mis_top450 标注器</div>
+          <div class="brand__sub">本地视频文件夹 + 浏览器内标注（可导入/导出 CSV）</div>
+        </div>
+      </div>
+      <div class="topbar__right">
+        <button id="btnPickDir" class="btn btn--primary">选择视频文件夹</button>
+        <label class="btn btn--ghost">
+          导入CSV
+          <input id="fileImportCsv" type="file" accept=".csv,text/csv" hidden />
+        </label>
+        <button id="btnExportCsv" class="btn btn--ghost" disabled>导出CSV</button>
+        <button id="btnResetLocal" class="btn btn--danger" title="清空本页面在浏览器里自动保存的标注缓存">清空缓存</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="videoPane">
+        <div class="videoPane__meta">
+          <div class="metaRow">
+            <div class="pill" id="pillStatus">未加载视频</div>
+            <div class="metaText" id="metaName">—</div>
+          </div>
+          <div class="metaRow metaRow--small">
+            <div class="metaHint" id="metaPathHint"></div>
+            <div class="metaHint" id="metaProgress"></div>
+          </div>
+        </div>
+
+        <div class="videoWrap">
+          <video id="video" controls playsinline preload="metadata"></video>
+        </div>
+
+        <div class="navRow">
+          <button id="btnPrev" class="btn btn--ghost" disabled>← 上一个</button>
+          <div class="navRow__center">
+            <label class="jump">
+              跳转到
+              <input id="inpJump" type="number" min="1" step="1" placeholder="idx" />
+            </label>
+            <button id="btnJump" class="btn btn--ghost" disabled>Go</button>
+          </div>
+          <button id="btnNext" class="btn btn--ghost" disabled>下一个 →</button>
+        </div>
+
+        <div class="kbdHelp">
+          快捷键：
+          <code>←/→</code> 上一个/下一个，
+          <code>Space</code> 播放暂停，
+          <code>V</code> 可见=1，
+          <code>X</code> 可见=0，
+          <code>1-6</code> 直接选情绪，
+          <code>C</code> 置信度循环
+        </div>
+      </section>
+
+      <section class="formPane">
+        <div class="card">
+          <div class="card__title">标注</div>
+
+          <div class="field">
+            <div class="field__label">听者可见（s2_visible）</div>
+            <div class="radioRow">
+              <label class="radio">
+                <input type="radio" name="visible" value="1" id="vis1" />
+                <span>1（能看到听者/反应）</span>
+              </label>
+              <label class="radio">
+                <input type="radio" name="visible" value="0" id="vis0" />
+                <span>0（看不到/不可判/只有speaker/混乱）</span>
+              </label>
+              <button id="btnClearVisible" class="btn btn--tiny" type="button" disabled>清空</button>
+            </div>
+            <div class="field__hint">
+              能看到但判不出情绪：选 <b>1</b>，但把情绪/置信度留空（后续我们会单独统计为“可见未标注”）。
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field__label">听者情绪（s2_label）</div>
+            <div class="grid2">
+              <label class="chip"><input type="radio" name="label" value="1" /> 1 neutral</label>
+              <label class="chip"><input type="radio" name="label" value="2" /> 2 angry</label>
+              <label class="chip"><input type="radio" name="label" value="3" /> 3 happy</label>
+              <label class="chip"><input type="radio" name="label" value="4" /> 4 sad</label>
+              <label class="chip"><input type="radio" name="label" value="5" /> 5 worried</label>
+              <label class="chip"><input type="radio" name="label" value="6" /> 6 surprise</label>
+            </div>
+            <div class="row">
+              <button id="btnClearLabel" class="btn btn--tiny" type="button" disabled>清空情绪</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field__label">置信度（s2_confidence）</div>
+            <div class="radioRow">
+              <label class="radio"><input type="radio" name="conf" value="3" /> 3（很确定）</label>
+              <label class="radio"><input type="radio" name="conf" value="2" /> 2（一般确定）</label>
+              <label class="radio"><input type="radio" name="conf" value="1" /> 1（不确定/边界）</label>
+              <button id="btnClearConf" class="btn btn--tiny" type="button" disabled>清空</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field__label">备注（notes，可选）</div>
+            <textarea id="txtNotes" rows="6" placeholder="可选：写你纠结点，比如“闪过的是speaker不是listener”“心声/旁白”“只有片尾曲”等"></textarea>
+          </div>
+
+          <div class="divider"></div>
+          <div class="stats">
+            <div class="stat">
+              <div class="stat__k">已填 visible</div>
+              <div class="stat__v" id="statVisible">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat__k">已标注情绪</div>
+              <div class="stat__v" id="statLabeled">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat__k">可见但无标签</div>
+              <div class="stat__v" id="statVisNoLabel">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card--small">
+          <div class="card__title">说明</div>
+          <ul class="bullets">
+            <li>这个页面只负责标注，不上传视频；视频仍在你本地磁盘。</li>
+            <li>若你用 GitHub Pages 部署：页面是 https，支持目录选择（Chrome/Edge）。</li>
+            <li>如果浏览器不支持“选择文件夹”，用“导入CSV/导出CSV”配合本地脚本也能跑。</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
+
