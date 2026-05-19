@@ -206,8 +206,6 @@ async function setCurrent(index) {
     }
 
     const video = $("video");
-    if (state.currentObjectUrl) URL.revokeObjectURL(state.currentObjectUrl);
-    state.currentObjectUrl = url;
     video.autoplay = true;
     video.src = url;
     video.currentTime = 0;
