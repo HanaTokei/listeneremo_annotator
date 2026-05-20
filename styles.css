@@ -217,6 +217,8 @@ textarea{
 .labelDisplay{margin:8px 0;font-size:32px;font-weight:bold;color:var(--primary,#4da6ff);letter-spacing:2px}
 .emotionJump{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
 .emotionBtn{font-size:13px;padding:10px 8px}
-
+.confusionTable{border-collapse:collapse;font-size:13px}
+.confusionTable th,.confusionTable td{padding:6px 10px;border:1px solid var(--border,rgba(255,255,255,.1));text-align:center}
+.confusionTable .rowHeader{font-weight:bold;text-align:left}
 .bullets{margin:0;padding-left:18px;color:var(--muted);font-size:12px;line-height:1.6}
 

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MER2026 Track1 - 标注自测</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar__left">
+        <div class="brand">
+          <div class="brand__title">标注自测</div>
+          <div class="brand__sub">随机50条视频，检验你的标注一致性</div>
+        </div>
+      </div>
+      <div class="topbar__right">
+        <button id="btnBack" class="btn btn--ghost" onclick="location.href='../'">返回主标注页</button>
+        <button id="btnShowMatrix" class="btn btn--primary" disabled>查看混淆矩阵</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="videoPane">
+        <div class="videoPane__meta">
+          <div class="metaRow">
+            <div class="pill" id="pillStatus">加载中...</div>
+            <div class="metaText" id="metaName">—</div>
+          </div>
+          <div class="metaRow metaRow--small">
+            <div class="metaHint" id="metaPathHint"></div>
+            <div class="metaHint" id="metaProgress"></div>
+          </div>
+        </div>
+
+        <div class="videoWrap">
+          <video id="video" controls playsinline preload="metadata"></video>
+        </div>
+
+        <div class="navRow">
+          <button id="btnPrev" class="btn btn--ghost" disabled>← 上一个</button>
+          <div class="navRow__center">
+            <span id="metaIdx">—</span>
+          </div>
+          <button id="btnNext" class="btn btn--ghost" disabled>下一个 →</button>
+        </div>
+
+        <div class="kbdHelp">
+          快捷键：<code>←/→</code> 上一个/下一个，<code>Space</code> 播放暂停，<code>1-6</code> 直接选情绪
+        </div>
+      </section>
+
+      <section class="formPane">
+        <div class="card">
+          <div class="card__title">你的标注（说话者情绪）</div>
+
+          <div class="field">
+            <div class="field__label">情绪标签</div>
+            <div class="grid2">
+              <label class="chip"><input type="radio" name="label" value="1" /> 1 neutral</label>
+              <label class="chip"><input type="radio" name="label" value="2" /> 2 angry</label>
+              <label class="chip"><input type="radio" name="label" value="3" /> 3 happy</label>
+              <label class="chip"><input type="radio" name="label" value="4" /> 4 sad</label>
+              <label class="chip"><input type="radio" name="label" value="5" /> 5 worried</label>
+              <label class="chip"><input type="radio" name="label" value="6" /> 6 surprise</label>
+            </div>
+            <div class="row">
+              <button id="btnClearLabel" class="btn btn--tiny" type="button">清空当前</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card--small">
+          <div class="card__title">说明</div>
+          <ul class="bullets">
+            <li>这些视频来自官方培训样例，标签已知。</li>
+            <li>标注完成后点击"查看混淆矩阵"，系统会对比你的标注与官方标签。</li>
+            <li>用于检验标注一致性，不参与后续训练。</li>
+          </ul>
+        </div>
+
+        <div id="matrixContainer" class="card" style="display:none">
+          <div class="card__title">混淆矩阵</div>
+          <div id="matrixContent"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./video_list.json"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
