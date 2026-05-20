@@ -41,6 +41,11 @@
         <div class="navRow">
           <button id="btnPrev" class="btn btn--ghost" disabled>← 上一个</button>
           <div class="navRow__center">
+            <label class="jump">
+              跳转到
+              <input id="inpJump" type="number" min="1" step="1" placeholder="idx" />
+            </label>
+            <button id="btnJump" class="btn btn--ghost" disabled>Go</button>
             <span id="metaIdx">—</span>
           </div>
           <button id="btnNext" class="btn btn--ghost" disabled>下一个 →</button>
