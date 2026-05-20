@@ -387,16 +387,12 @@ async function loadVideoList() {
   setStatus("加载视频列表...", "info");
 
   try {
-    const videos = VIDEO_LIST.map((v, i) => {
-      // fileName like "samplenew_00015402.mp4" -> name "samplenew_00015402"
-      const name = v.fileName.replace(/\.mp4$/i, "");
-      return {
-        idx: i + 1,
-        name: name,
-        fileName: v.fileName,
-        downloadUrl: `https://raw.githubusercontent.com/${state.repo}/${state.branch}/${state.dataPath}/${v.fileName}`,
-      };
-    });
+    const videos = VIDEO_LIST.map((v, i) => ({
+      idx: i + 1,
+      name: v.fileName.replace(/\.mp4$/i, ""),
+      fileName: v.fileName,
+      downloadUrl: `https://raw.githubusercontent.com/${state.repo}/${state.branch}/${state.dataPath}/${v.fileName}`,
+    }));
 
     state.files = videos;
     setStatus(`已载入 ${videos.length} 条视频`, "ok");
