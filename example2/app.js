@@ -9,7 +9,7 @@ function $(id) {
 const state = {
   repo: "HanaTokei/listeneremo_annotator",
   branch: "main",
-  dataPath: "example/data",
+  dataPath: "example2/data",
   files: [],
   currentIndex: 0,
   blobCache: {},
@@ -64,7 +64,7 @@ async function setCurrent(index) {
   $("btnNext").disabled = index >= state.files.length - 1;
 
   // restore user annotation
-  const userLabel = state.annotations[item.gt_fileName] || "";
+  const userLabel = state.annotations[item.fileName] || "";
   document.querySelectorAll('input[name="label"]').forEach(n => n.checked = false);
   if (userLabel) {
     const node = document.querySelector(`input[name="label"][value="${userLabel}"]`);
@@ -73,14 +73,14 @@ async function setCurrent(index) {
 
   // load video
   try {
-    let url = state.blobCache[item.gt_fileName];
+    let url = state.blobCache[item.fileName];
     if (!url) {
       setStatus("加载中...", "info");
-      const resp = await fetch(`https://raw.githubusercontent.com/${state.repo}/${state.branch}/${state.dataPath}/${item.gt_fileName}`);
+      const resp = await fetch(`https://raw.githubusercontent.com/${state.repo}/${state.branch}/${state.dataPath}/${item.fileName}`);
       if (!resp.ok) throw new Error("加载失败");
       const blob = await resp.blob();
       url = URL.createObjectURL(blob);
-      state.blobCache[item.gt_fileName] = url;
+      state.blobCache[item.fileName] = url;
     }
     const video = $("video");
     video.src = url;
@@ -97,7 +97,7 @@ async function setCurrent(index) {
 
 function applyAnnotation(labelCode) {
   const item = state.files[state.currentIndex];
-  state.annotations[item.gt_fileName] = labelCode;
+  state.annotations[item.fileName] = labelCode;
   saveToLocalStorage();
   updateProgress();
 }
@@ -109,7 +109,7 @@ function setupEvents() {
   $("btnClearLabel").addEventListener("click", () => {
     document.querySelectorAll('input[name="label"]').forEach(n => n.checked = false);
     const item = state.files[state.currentIndex];
-    delete state.annotations[item.gt_fileName];
+    delete state.annotations[item.fileName];
     saveToLocalStorage();
     updateProgress();
   });
@@ -155,8 +155,8 @@ function showConfusionMatrix() {
 
   let total = 0, correct = 0;
   state.files.forEach(item => {
-    const user = state.annotations[item.gt_fileName];
-    const gt = item.gt_labelCode;
+    const user = state.annotations[item.fileName];
+    const gt = item.labelCode;
     if (user) {
       matrix[gt][user]++;
       total++;
@@ -188,11 +188,11 @@ function showConfusionMatrix() {
 
 function exportCsv() {
   const labelNames = { "1":"neutral","2":"angry","3":"happy","4":"sad","5":"worried","6":"surprise" };
-  const header = ["idx","fileName","gt_code","gt_label","user_code","user_label"];
+  const header = ["idx","fileName","gt_code","gt_labelName","user_code","user_labelName"];
   const rows = [header];
   state.files.forEach((item, i) => {
-    const user = state.annotations[item.gt_fileName] || "";
-    rows.push([String(i+1), item.fileName, item.gt_labelCode, item.gt_label, user, labelNames[user]||""]);
+    const user = state.annotations[item.fileName] || "";
+    rows.push([String(i+1), item.fileName, item.labelCode, item.label, user, labelNames[user]||""]);
   });
   const csv = rows.map(r => r.map(v => /[,"\r\n]/.test(v) ? `"${v.replaceAll('"','""')}"` : v).join(",")).join("\r\n") + "\r\n";
   const ts = new Date().toISOString().replaceAll(":","").slice(0,15);
