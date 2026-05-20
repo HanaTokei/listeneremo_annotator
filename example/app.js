@@ -70,7 +70,15 @@ function setupEvents() {
   $("btnPrev").addEventListener("click", () => setCurrent(state.currentIndex - 1));
   $("btnNext").addEventListener("click", () => setCurrent(state.currentIndex + 1));
 
-  window.addEventListener("keydown", (e) => {
+  document.querySelectorAll(".emotionBtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const label = btn.dataset.label;
+    const idx = state.files.findIndex(v => v.label === label);
+    if (idx >= 0) setCurrent(idx);
+  });
+});
+
+window.addEventListener("keydown", (e) => {
     if (e.target && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT")) return;
     if (e.key === "ArrowLeft") { e.preventDefault(); setCurrent(state.currentIndex - 1); }
     if (e.key === "ArrowRight") { e.preventDefault(); setCurrent(state.currentIndex + 1); }

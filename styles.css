@@ -215,6 +215,8 @@ textarea{
 }
 
 .labelDisplay{margin:8px 0;font-size:32px;font-weight:bold;color:var(--primary,#4da6ff);letter-spacing:2px}
+.emotionJump{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.emotionBtn{font-size:13px;padding:10px 8px}
 
 .bullets{margin:0;padding-left:18px;color:var(--muted);font-size:12px;line-height:1.6}
 
