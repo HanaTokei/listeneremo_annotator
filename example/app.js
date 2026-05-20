@@ -60,6 +60,7 @@ async function setCurrent(index) {
     video.src = url;
     video.currentTime = 0;
     video.load();
+    video.play().catch(() => {});
     setStatus("已加载", "ok");
   } catch (e) {
     setStatus("加载失败：" + e.message, "danger");
