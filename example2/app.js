@@ -119,6 +119,7 @@ function setupEvents() {
   });
 
   $("btnExportCsv").addEventListener("click", exportCsv);
+  $("btnShowMatrix").addEventListener("click", showConfusionMatrix);
 
   window.addEventListener("keydown", (e) => {
     if (e.target && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT")) return;
@@ -146,6 +147,45 @@ function downloadText(filename, text) {
   URL.revokeObjectURL(url);
 }
 
+function showConfusionMatrix() {
+  const labels = ['1','2','3','4','5','6'];
+  const labelNames = { '1':'neutral','2':'angry','3':'happy','4':'sad','5':'worried','6':'surprise' };
+  const matrix = {};
+  labels.forEach(r => { matrix[r] = {}; labels.forEach(c => { matrix[r][c] = 0; }); });
+
+  let total = 0, correct = 0;
+  state.files.forEach(item => {
+    const user = state.annotations[item.fileName];
+    const gt = item.labelCode;
+    if (user) {
+      matrix[gt][user]++;
+      total++;
+      if (user === gt) correct++;
+    }
+  });
+
+  const acc = total > 0 ? (correct / total * 100).toFixed(1) : 0;
+
+  let html = `<div style="margin-bottom:12px;font-weight:bold">准确率：${acc}%（${correct}/${total}）</div>`;
+  html += `<table class="confusionTable"><tr><th>真实\\预测</th>`;
+  labels.forEach(c => { html += `<th>${labelNames[c]}</th>`; });
+  html += `</tr>`;
+  labels.forEach(gt => {
+    html += `<tr><td class="rowHeader">${labelNames[gt]}</td>`;
+    labels.forEach(user => {
+      const val = matrix[gt][user];
+      const highlight = gt === user && val > 0 ? ' style="background:rgba(47,208,123,.3)"' : '';
+      html += `<td${highlight}>${val}</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</table>`;
+  html += `<div style="margin-top:12px;font-size:12px;color:var(--muted)">行=官方标签，列=你的标注。对角线为正确数。</div>`;
+
+  $("matrixContainer").style.display = "block";
+  $("matrixContent").innerHTML = html;
+}
+
 function exportCsv() {
   const labelNames = { "1":"neutral","2":"angry","3":"happy","4":"sad","5":"worried","6":"surprise" };
   const header = ["idx","fileName","gt_code","gt_label","user_code","user_label"];
@@ -164,6 +204,7 @@ function updateProgress() {
   const annotated = Object.keys(state.annotations).filter(k => state.annotations[k]).length;
   $("metaProgress").textContent = `已标注：${annotated}/${total}`;
   $("btnExportCsv").disabled = annotated < total;
+  $("btnShowMatrix").disabled = annotated < total;
 }
 
 function init() {
