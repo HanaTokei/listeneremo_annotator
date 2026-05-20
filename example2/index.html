@@ -74,6 +74,34 @@
               <button id="btnClearLabel" class="btn btn--tiny" type="button">清空当前</button>
             </div>
           </div>
+
+          <div class="field">
+            <div class="field__label">置信度</div>
+            <div class="radioRow">
+              <label class="radio"><input type="radio" name="conf" value="3" /> 3（很确定）</label>
+              <label class="radio"><input type="radio" name="conf" value="2" /> 2（一般确定）</label>
+              <label class="radio"><input type="radio" name="conf" value="1" /> 1（不确定）</label>
+              <button id="btnClearConf" class="btn btn--tiny" type="button">清空</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field__label">备注</div>
+            <textarea id="txtNotes" rows="4" placeholder="可选备注"></textarea>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="stats">
+            <div class="stat">
+              <div class="stat__k">已标注</div>
+              <div class="stat__v" id="statLabeled">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat__k">当前进度</div>
+              <div class="stat__v" id="statProgress">0/50</div>
+            </div>
+          </div>
         </div>
 
         <div class="card card--small">
