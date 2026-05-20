@@ -16,7 +16,7 @@
       </div>
       <div class="topbar__right">
         <button id="btnBack" class="btn btn--ghost" onclick="location.href='../'">返回主标注页</button>
-        <button id="btnShowMatrix" class="btn btn--primary" disabled>查看混淆矩阵</button>
+        <button id="btnExportCsv" class="btn btn--ghost" disabled>导出CSV</button>
       </div>
     </header>
 
@@ -74,16 +74,12 @@
           <div class="card__title">说明</div>
           <ul class="bullets">
             <li>这些视频来自官方培训样例，标签已知。</li>
-            <li>标注完成后点击"查看混淆矩阵"，系统会对比你的标注与官方标签。</li>
+            <li>标注完成后导出CSV，包含官方标签，可自行计算混淆矩阵。</li>
             <li>用于检验标注一致性，不参与后续训练。</li>
           </ul>
         </div>
 
-        <div id="matrixContainer" class="card" style="display:none">
-          <div class="card__title">混淆矩阵</div>
-          <div id="matrixContent"></div>
-        </div>
-      </section>
+        </section>
     </main>
 
     <script src="./video_list.json"></script>

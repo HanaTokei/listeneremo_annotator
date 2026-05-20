@@ -118,7 +118,7 @@ function setupEvents() {
     el.addEventListener("change", () => applyAnnotation(el.value));
   });
 
-  $("btnShowMatrix").addEventListener("click", showConfusionMatrix);
+  $("btnExportCsv").addEventListener("click", exportCsv);
 
   window.addEventListener("keydown", (e) => {
     if (e.target && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT")) return;
@@ -137,43 +137,33 @@ function setupEvents() {
   });
 }
 
-function showConfusionMatrix() {
-  const labels = ['1','2','3','4','5','6'];
-  const labelNames = { '1':'neutral','2':'angry','3':'happy','4':'sad','5':'worried','6':'surprise' };
-  const matrix = {};
-  labels.forEach(r => { matrix[r] = {}; labels.forEach(c => { matrix[r][c] = 0; }); });
+function downloadText(filename, text) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
 
-  let total = 0, correct = 0;
-  state.files.forEach(item => {
-    const user = state.annotations[item.fileName];
-    const gt = item.labelCode;
-    if (user) {
-      matrix[gt][user]++;
-      total++;
-      if (user === gt) correct++;
-    }
+function exportCsv() {
+  const labelNames = { "1":"neutral","2":"angry","3":"happy","4":"sad","5":"worried","6":"surprise" };
+  const header = ["idx","fileName","gt_code","gt_label","user_code","user_label"];
+  const rows = [header];
+  state.files.forEach((item, i) => {
+    const user = state.annotations[item.fileName] || "";
+    rows.push([String(i+1), item.fileName, item.labelCode, item.label, user, labelNames[user]||""]);
   });
+  const csv = rows.map(r => r.map(v => /[,"\r\n]/.test(v) ? `"${v.replaceAll('"','""')}"` : v).join(",")).join("\r\n") + "\r\n";
+  const ts = new Date().toISOString().replaceAll(":","").slice(0,15);
+  downloadText(`example2_annotations_${ts}.csv`, csv);
+}
 
-  const acc = total > 0 ? (correct / total * 100).toFixed(1) : 0;
-
-  let html = `<div style="margin-bottom:12px;font-weight:bold">准确率：${acc}%（${correct}/${total}）</div>`;
-  html += `<table class="confusionTable"><tr><th>真实\\预测</th>`;
-  labels.forEach(c => { html += `<th>${labelNames[c]}</th>`; });
-  html += `</tr>`;
-  labels.forEach(gt => {
-    html += `<tr><td class="rowHeader">${labelNames[gt]}</td>`;
-    labels.forEach(user => {
-      const val = matrix[gt][user];
-      const highlight = gt === user && val > 0 ? ' style="background:rgba(47,208,123,.3)"' : '';
-      html += `<td${highlight}>${val}</td>`;
-    });
-    html += `</tr>`;
-  });
-  html += `</table>`;
-  html += `<div style="margin-top:12px;font-size:12px;color:var(--muted)">行=官方标签，列=你的标注。对角线为正确数。</div>`;
-
-  $("matrixContainer").style.display = "block";
-  $("matrixContent").innerHTML = html;
+function updateProgress() {
+  const total = state.files.length;
+  const annotated = Object.keys(state.annotations).filter(k => state.annotations[k]).length;
+  $("metaProgress").textContent = `已标注：${annotated}/${total}`;
+  $("btnExportCsv").disabled = annotated < total;
 }
 
 function init() {
