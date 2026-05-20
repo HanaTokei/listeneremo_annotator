@@ -137,6 +137,18 @@ function setupEvents() {
     btnExportCsv.addEventListener("click", exportCsv);
   }
 
+  const fileImportCsv = $("fileImportCsv");
+  if (fileImportCsv) {
+    fileImportCsv.addEventListener("change", async (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const text = await f.text();
+      const count = importCsv(text);
+      alert(`已导入 ${count} 条标注，可点"混淆矩阵"查看`);
+      e.target.value = "";
+    });
+  }
+
   window.addEventListener("keydown", (e) => {
     if (e.target && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT")) return;
     if (e.key === "ArrowLeft") { e.preventDefault(); setCurrent(state.currentIndex - 1); }
@@ -211,6 +223,68 @@ function exportCsv() {
   a.download = "example2_annotations.csv";
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function parseCsv(text) {
+  const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+  const rows = [];
+  for (const line of lines) {
+    if (line.trim() === "") continue;
+    const row = [];
+    let i = 0;
+    while (i < line.length) {
+      if (line[i] === '"') {
+        i++;
+        let cell = "";
+        while (i < line.length) {
+          if (line[i] === '"') {
+            if (i + 1 < line.length && line[i + 1] === '"') { cell += '"'; i += 2; continue; }
+            i++;
+            break;
+          }
+          cell += line[i++];
+        }
+        if (i < line.length && line[i] === ",") i++;
+        row.push(cell);
+      } else {
+        let j = i;
+        while (j < line.length && line[j] !== ",") j++;
+        row.push(line.slice(i, j).trim());
+        i = j + 1;
+      }
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+function importCsv(text) {
+  const rows = parseCsv(text);
+  if (!rows.length) return 0;
+  const header = rows[0].map(x => x.trim().toLowerCase());
+  const idxFname = header.indexOf("filename");
+  const idxUser = header.indexOf("userlabel");
+
+  if (idxFname < 0 || idxUser < 0) {
+    alert("CSV格式错误：需要 fileName 和 userLabel 列");
+    return 0;
+  }
+
+  let count = 0;
+  for (let i = 1; i < rows.length; i++) {
+    const fname = (rows[i][idxFname] || "").trim();
+    const user = (rows[i][idxUser] || "").trim();
+    if (!fname || !user) continue;
+    state.annotations[fname] = user;
+    count++;
+  }
+
+  saveToLocalStorage();
+  updateProgress();
+  if (state.files.length > 0 && state.currentIndex >= 0) {
+    setCurrent(state.currentIndex);
+  }
+  return count;
 }
 
 function init() {
