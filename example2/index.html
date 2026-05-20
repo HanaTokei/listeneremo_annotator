@@ -15,7 +15,6 @@
         </div>
       </div>
       <div class="topbar__right">
-        <button id="btnBack" class="btn btn--ghost" onclick="location.href='../'">返回主标注页</button>
         <button id="btnExportCsv" class="btn btn--ghost" disabled>导出CSV</button>
         <button id="btnShowMatrix" class="btn btn--primary" disabled>混淆矩阵</button>
       </div>
@@ -29,8 +28,8 @@
             <div class="metaText" id="metaName">—</div>
           </div>
           <div class="metaRow metaRow--small">
-            <div class="metaHint" id="metaPathHint"></div>
             <div class="metaHint" id="metaProgress"></div>
+            <div class="metaHint" id="metaIdx">—</div>
           </div>
         </div>
 
@@ -40,14 +39,6 @@
 
         <div class="navRow">
           <button id="btnPrev" class="btn btn--ghost" disabled>← 上一个</button>
-          <div class="navRow__center">
-            <label class="jump">
-              跳转到
-              <input id="inpJump" type="number" min="1" step="1" placeholder="idx" />
-            </label>
-            <button id="btnJump" class="btn btn--ghost" disabled>Go</button>
-            <span id="metaIdx">—</span>
-          </div>
           <button id="btnNext" class="btn btn--ghost" disabled>下一个 →</button>
         </div>
 
@@ -58,7 +49,7 @@
 
       <section class="formPane">
         <div class="card">
-          <div class="card__title">你的标注（说话者情绪）</div>
+          <div class="card__title">你的标注</div>
 
           <div class="field">
             <div class="field__label">情绪标签</div>
@@ -74,41 +65,13 @@
               <button id="btnClearLabel" class="btn btn--tiny" type="button">清空当前</button>
             </div>
           </div>
-
-          <div class="field">
-            <div class="field__label">置信度</div>
-            <div class="radioRow">
-              <label class="radio"><input type="radio" name="conf" value="3" /> 3（很确定）</label>
-              <label class="radio"><input type="radio" name="conf" value="2" /> 2（一般确定）</label>
-              <label class="radio"><input type="radio" name="conf" value="1" /> 1（不确定）</label>
-              <button id="btnClearConf" class="btn btn--tiny" type="button">清空</button>
-            </div>
-          </div>
-
-          <div class="field">
-            <div class="field__label">备注</div>
-            <textarea id="txtNotes" rows="4" placeholder="可选备注"></textarea>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="stats">
-            <div class="stat">
-              <div class="stat__k">已标注</div>
-              <div class="stat__v" id="statLabeled">0</div>
-            </div>
-            <div class="stat">
-              <div class="stat__k">当前进度</div>
-              <div class="stat__v" id="statProgress">0/50</div>
-            </div>
-          </div>
         </div>
 
         <div class="card card--small">
           <div class="card__title">说明</div>
           <ul class="bullets">
-            <li>这些视频来自官方培训样例，标签已知。</li>
-            <li>标注完成后点"混淆矩阵"可直接查看，或导出CSV自行分析。</li>
+            <li>这些视频来自官方培训样例，标签已知（但你不看）。</li>
+            <li>标注完成后点"混淆矩阵"查看准确率，或导出CSV分析。</li>
             <li>用于检验标注一致性，不参与后续训练。</li>
           </ul>
         </div>
