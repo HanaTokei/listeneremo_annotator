@@ -16,13 +16,13 @@ function $(id) {
 const state = {
   repo: "HanaTokei/listeneremo_annotator",
   branch: "main",
-  dataPath: "data",
+  dataPath: "data2",
   files: /** @type {Array<{idx:number, name:string, fileName:string, downloadUrl:string}>} */ ([]),
   currentIndex: 0,
   currentObjectUrl: null,
   blobCache: /** @type {Record<string, string>} */ ({}),
   annotations: /** @type {Record<string, {s2_visible:string, s2_label:string, s2_confidence:string, notes:string}>} */ ({}),
-  storageKey: "mis_top450_annotator_v1",
+  storageKey: "mis_top500_exclude450_annotator_v1",
 };
 
 function setStatus(text, kind = "info") {
