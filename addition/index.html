@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MER2026 视频标注器 - data2</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header>
+    <h1>MER2026 视频标注器 - data2 (追加样本)</h1>
+    <button id="btnExport" onclick="downloadAnnotations()">导出CSV</button>
+    <button id="btnImport" onclick="document.getElementById('fileInput').click()">导入CSV</button>
+    <input type="file" id="fileInput" accept=".csv" style="display:none" onchange="importCSV(event)">
+    <span id="pillStatus" class="status-pill">就绪</span>
+  </header>
+
+  <main>
+    <section id="annotatorPanel" style="display:block">
+      <div class="layout">
+        <div class="player-wrap">
+          <div id="videoWrap">
+            <video id="videoPlayer" controls></video>
+            <div id="overlayMsg"></div>
+          </div>
+          <div class="prog">
+            <span id="counter">0 / 0</span>
+            <button onclick="prev()">上一条</button>
+            <button onclick="next()">下一条</button>
+            <button onclick="jumpToStart()">跳到开头</button>
+            <button onclick="jumpToFirstUnlabeled()">跳到首个未标注</button>
+          </div>
+        </div>
+
+        <div class="form-wrap">
+          <div class="field">
+            <label>视频编号</label>
+            <span id="infoIdx">-</span>
+          </div>
+          <div class="field">
+            <label>文件名</label>
+            <span id="infoFileName">-</span>
+          </div>
+
+          <div class="field">
+            <label>说话人是否可见</label>
+            <div class="radio-group">
+              <label><input type="radio" name="s2_visible" value="visible"> 可见</label>
+              <label><input type="radio" name="s2_visible" value="occluded"> 遮挡</label>
+              <label><input type="radio" name="s2_visible" value="absent"> 无人</label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>情感类别</label>
+            <div class="radio-group">
+              <label><input type="radio" name="s2_label" value="positive"> 积极</label>
+              <label><input type="radio" name="s2_label" value="neutral"> 中性</label>
+              <label><input type="radio" name="s2_label" value="negative"> 消极</label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>置信度</label>
+            <div class="radio-group">
+              <label><input type="radio" name="s2_confidence" value="high"> 高</label>
+              <label><input type="radio" name="s2_confidence" value="medium"> 中</label>
+              <label><input type="radio" name="s2_confidence" value="low"> 低</label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>备注</label>
+            <textarea id="notesInput" rows="3"></textarea>
+          </div>
+
+          <div class="field">
+            <label>标注进度</label>
+            <div class="progress-bar">
+              <div id="progressFill"></div>
+            </div>
+            <span id="progressText">0%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="./video_list2.json"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
