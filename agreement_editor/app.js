@@ -210,24 +210,22 @@ function render() {
 function loadVideo() {
   const name = state.sampleNames[state.idx];
   const v = $("video");
+  v.autoplay = true;
   v.muted = true;
   v.src = state.videoBase + name + ".mp4";
+  v.currentTime = 0;
   v.load();
-  // Wait for the new src to be loadable, then play. Calling play() immediately
-  // after load() races against the new source and gets rejected with AbortError.
-  const onReady = () => {
-    v.removeEventListener("loadeddata", onReady);
-    v.removeEventListener("error", onErr);
+  try {
     const p = v.play();
-    if (p && p.catch) p.catch(err => console.warn("autoplay blocked:", err && err.message));
-  };
-  const onErr = () => {
-    v.removeEventListener("loadeddata", onReady);
-    v.removeEventListener("error", onErr);
-    console.warn("video load failed:", name);
-  };
-  v.addEventListener("loadeddata", onReady);
-  v.addEventListener("error", onErr);
+    if (p && typeof p.catch === "function") {
+      p.catch(() => {
+        $("pillStatus").textContent = "自动播放被浏览器阻止：点一次视频后再切换";
+        $("pillStatus").style.color = "#ffe1e8";
+      });
+    }
+  } catch (_) {
+    $("pillStatus").textContent = "自动播放失败：点一次视频后再切换";
+  }
 }
 
 function updateStats() {
