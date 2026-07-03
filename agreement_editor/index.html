@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>agreement1549 JSON 编辑器</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      .formPane { max-height: calc(100vh - 80px); overflow-y: auto; padding-right: 8px; }
+      .field { background: var(--surface, #fff); border: 1px solid rgba(0,0,0,.06); border-radius: 10px; padding: 12px 14px; margin: 12px 0; }
+      .field__label { font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+      .field__label .path { color: var(--muted, #888); font-weight: 400; font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .field__hint { margin-top: 8px; color: var(--muted, #888); font-size: 12px; line-height: 1.4; }
+      .field input[type="text"], .field input[type="number"], .field textarea, .field select {
+        width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid rgba(0,0,0,.12);
+        border-radius: 6px; font: inherit; background: #fff; color: var(--text, #222);
+      }
+      .field textarea { resize: vertical; min-height: 60px; }
+      .field input[type="text"]:focus, .field input[type="number"]:focus, .field textarea:focus, .field select:focus {
+        outline: 2px solid rgba(90,167,255,.4); border-color: rgba(90,167,255,.6);
+      }
+      .field.dirty .field__label::after { content: "●"; color: #e8902a; font-size: 14px; }
+      .grid { display: grid; gap: 6px 12px; }
+      .grid.cols2 { grid-template-columns: 1fr 1fr; }
+      .grid.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+      .grid.cols4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+      .grid label { font-size: 12px; color: var(--muted, #666); display: flex; align-items: center; gap: 6px; }
+      .grid label input { width: auto !important; padding: 2px 4px !important; }
+      .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+      .chip-row label { background: #f3f4f7; border: 1px solid rgba(0,0,0,.06); padding: 4px 10px; border-radius: 14px; cursor: pointer; }
+      .chip-row label input { margin-right: 4px; }
+      .chip-row input:checked + span { font-weight: 600; }
+      .scroll-x { overflow-x: auto; }
+      .scroll-x table { border-collapse: collapse; width: 100%; }
+      .scroll-x th, .scroll-x td { padding: 4px 8px; border: 1px solid rgba(0,0,0,.08); font-size: 12px; }
+      .scroll-x th { background: #f3f4f7; text-align: left; font-weight: 600; }
+      .scroll-x input { width: 64px; }
+      .scroll-x td.label { color: var(--muted); font-family: ui-monospace, monospace; white-space: nowrap; }
+      .stats { display: flex; gap: 16px; font-size: 12px; color: var(--muted); }
+      .stats b { color: var(--text); font-size: 14px; }
+      .videoPathBox { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+      .videoPathBox input { width: 360px; padding: 4px 6px; border: 1px solid rgba(0,0,0,.12); border-radius: 6px; font: inherit; }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar__left">
+        <div class="brand">
+          <div class="brand__title">agreement1549 JSON 编辑器</div>
+          <div class="brand__sub">左：视频 & 导航；右：编辑当前 sample 的所有字段（自动存 localStorage）</div>
+        </div>
+      </div>
+      <div class="topbar__right">
+        <label class="btn btn--ghost">导入 JSON<input id="fileImport" type="file" accept=".json,application/json" hidden /></label>
+        <button id="btnExport" class="btn btn--ghost" disabled>导出 JSON</button>
+        <button id="btnReset" class="btn btn--danger" title="清空 localStorage 中的编辑缓存">清空缓存</button>
+        <button class="btn btn--ghost" onclick="location.href='../'">返回主标注页</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="videoPane">
+        <div class="videoPane__meta">
+          <div class="metaRow">
+            <div class="pill" id="pillStatus">未加载</div>
+            <div class="metaText" id="metaName">—</div>
+          </div>
+          <div class="metaRow metaRow--small">
+            <div class="metaHint" id="metaProgress">—</div>
+          </div>
+        </div>
+
+        <div class="videoWrap">
+          <video id="video" controls playsinline preload="metadata"></video>
+        </div>
+
+        <div class="navRow">
+          <button id="btnPrev" class="btn btn--ghost" disabled>← 上一个</button>
+          <div class="navRow__center">
+            <span id="metaIdx">— / —</span>
+            <label class="jump">跳转到 <input id="inpJump" type="number" min="1" step="1" placeholder="idx" /></label>
+            <button id="btnJump" class="btn btn--ghost" disabled>Go</button>
+          </div>
+          <button id="btnNext" class="btn btn--ghost" disabled>下一个 →</button>
+        </div>
+
+        <div class="videoPathBox">
+          视频目录：<input id="inpVideoBase" type="text" />
+        </div>
+
+        <div class="kbdHelp">
+          快捷键：<code>←/→</code> 上一个/下一个，<code>Space</code> 播放暂停，<code>1-6</code> agreement_label，<code>Ctrl+S</code> 导出
+        </div>
+      </section>
+
+      <section class="formPane">
+        <div class="card">
+          <div class="card__title">编辑面板</div>
+          <div class="stats" id="statsBar"></div>
+          <div id="formRoot">加载中...</div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./samples.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
