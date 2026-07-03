@@ -212,6 +212,11 @@ function loadVideo() {
   const v = $("video");
   v.src = state.videoBase + name + ".mp4";
   v.load();
+  // Autoplay muted (browsers block unmuted autoplay without prior interaction).
+  // Users can unmute via the native video controls.
+  v.muted = true;
+  const p = v.play();
+  if (p && p.catch) p.catch(() => { /* autoplay blocked, user clicks play */ });
 }
 
 function updateStats() {
