@@ -45,7 +45,6 @@ const state = {
   videoBase: DEFAULT_VIDEO_BASE,
   dirtyPaths: {},    // sampleName -> Set<path>
   blobCache: {},     // sampleName -> objectURL (mirrors main app's pattern)
-  userInteracted: false,  // Chrome autoplay policy: 第一次需用户点"开始"
 };
 
 const $ = (id) => document.getElementById(id);
@@ -168,22 +167,8 @@ function init() {
   });
   $("fileImport").addEventListener("change", importJSON);
 
-  // 首次加载: 显示"开始"覆盖层,等用户点一下建立 Chrome 交互记录,之后自动播放才有声音
-  $("btnStart").addEventListener("click", () => {
-    state.userInteracted = true;
-    $("startOverlay").style.display = "none";
-    const v = $("video");
-    v.muted = false;
-    v.volume = 1.0;
-    v.play().catch(err => console.warn("start play failed:", err && err.message));
-  });
-  // 标记交互: 点 ←/→ 按钮也建立交互记录
-  $("btnPrev").addEventListener("click", () => { state.userInteracted = true; });
-  $("btnNext").addEventListener("click", () => { state.userInteracted = true; });
-
   goto(0);
   updateStats();
-  $("startOverlay").style.display = "flex";
 }
 
 function onGlobalKey(e) {
@@ -244,26 +229,19 @@ async function loadVideo() {
   }
   const v = $("video");
   v.autoplay = true;
-  v.muted = false;
-  v.volume = 1.0;
   v.src = url;
   v.currentTime = 0;
   v.load();
-  // 第一次没用户交互就不自动播,等点"开始";之后每次切都自动播带声音
-  if (!state.userInteracted) {
-    $("startOverlay").style.display = "flex";
-    return;
-  }
   try {
     const p = v.play();
     if (p && typeof p.catch === "function") {
       p.catch(() => {
-        $("pillStatus").textContent = "自动播放被阻止: 按 M 解除静音";
+        $("pillStatus").textContent = "自动播放被阻止: 点一次视频后再切换";
         $("pillStatus").style.color = "#ffe1e8";
       });
     }
   } catch (_) {
-    $("pillStatus").textContent = "自动播放失败: 按 M 解除静音";
+    $("pillStatus").textContent = "自动播放失败: 点一次视频后再切换";
   }
 }
 
