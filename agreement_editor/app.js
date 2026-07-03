@@ -12,6 +12,32 @@ const LS_VIDEO_BASE = "agreement_editor_video_base";
 
 const EMOTION_CN = { neutral: "中性", angry: "生气", happy: "快乐", sad: "悲伤", worried: "担心", surprise: "惊讶" };
 
+// 22 维社交评估中文对照: 14 个 soc_* (社交事件) + 8 个 dim_* (人际维度)
+const RELATION22_CN = {
+  soc_affiliation_or_praise: "亲近/赞美",
+  soc_apology_or_repair: "道歉/修复",
+  soc_bad_news_or_loss: "坏消息/损失",
+  soc_conflict_or_blame: "冲突/指责",
+  soc_disagreement_or_rejection: "反对/拒绝",
+  soc_humor_or_play: "幽默/玩笑",
+  soc_information_or_explanation: "信息/解释",
+  soc_low_interpersonal_load: "低人际负荷",
+  soc_pressure_or_threat: "压力/威胁",
+  soc_question_or_probe: "提问/试探",
+  soc_request_or_directive: "请求/指令",
+  soc_self_disclosure_or_vulnerability: "自我披露/脆弱",
+  soc_support_or_reassurance: "支持/安慰",
+  soc_unexpected_reveal: "意外揭示",
+  dim_affiliation_support: "亲近/支持",
+  dim_conflict_blame: "冲突/指责",
+  dim_dominance_pressure: "支配/压迫",
+  dim_listener_directedness: "听者指向性",
+  dim_novelty_unexpectedness: "新颖/意外",
+  dim_repair_reconciliation: "修复/和解",
+  dim_threat_risk: "威胁/风险",
+  dim_vulnerability_disclosure: "脆弱/披露",
+};
+
 const state = {
   sampleNames: [],   // ordered list
   idx: 0,            // current index
@@ -293,7 +319,14 @@ function kvTable(path, obj, opts = {}) {
   const keys = Object.keys(obj || {});
   for (const k of keys) {
     const tr = el("tr");
-    tr.appendChild(el("td", { class: "label" }, k));
+    const labelTd = el("td", { class: "label" });
+    if (opts.labelMap && opts.labelMap[k]) {
+      labelTd.appendChild(el("div", {}, opts.labelMap[k]));
+      labelTd.appendChild(el("div", { class: "en-key" }, k));
+    } else {
+      labelTd.appendChild(document.createTextNode(k));
+    }
+    tr.appendChild(labelTd);
     const td = el("td");
     const v = obj[k];
     const inputPath = `${path}.${k}`;
@@ -364,7 +397,7 @@ function renderForm() {
   root.appendChild(fieldCard("_raw_relation_available", "_raw_relation_available", checkboxInput("_raw_relation_available", s._raw_relation_available)));
 
   // 7) relation22
-  if (s.relation22) root.appendChild(fieldCard("relation22", "relation22 (22 维社交评估, 0-3)", kvTable("relation22", s.relation22, { min: 0, max: 3 })));
+  if (s.relation22) root.appendChild(fieldCard("relation22", "relation22 (22 维社交评估, 0-3)", kvTable("relation22", s.relation22, { min: 0, max: 3, labelMap: RELATION22_CN })));
 
   // 8) observable_cues
   if (s.observable_cues) root.appendChild(fieldCard("observable_cues", "observable_cues (14 维视觉线索, 0-3)", kvTable("observable_cues", s.observable_cues, { min: 0, max: 3 })));
