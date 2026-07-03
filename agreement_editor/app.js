@@ -238,15 +238,12 @@ async function loadVideo() {
     const p = v.play();
     if (p && typeof p.catch === "function") {
       p.catch(() => {
-        // Chrome 强制静音自动播放,接受这个状态,提示用户点一下解除
-        v.muted = true;
-        v.play().catch(() => {});
-        $("pillStatus").textContent = "已自动静音(浏览器策略): 点视频或按 M 解除";
+        $("pillStatus").textContent = "自动播放被阻止: 点视频或按 M 解除静音";
         $("pillStatus").style.color = "#ffe1e8";
       });
     }
   } catch (_) {
-    $("pillStatus").textContent = "自动播放失败：点一次视频后再切换";
+    $("pillStatus").textContent = "自动播放失败: 点一次视频后再切换";
   }
 }
 
