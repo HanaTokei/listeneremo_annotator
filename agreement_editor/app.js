@@ -210,13 +210,24 @@ function render() {
 function loadVideo() {
   const name = state.sampleNames[state.idx];
   const v = $("video");
+  v.muted = true;
   v.src = state.videoBase + name + ".mp4";
   v.load();
-  // Autoplay muted (browsers block unmuted autoplay without prior interaction).
-  // Users can unmute via the native video controls.
-  v.muted = true;
-  const p = v.play();
-  if (p && p.catch) p.catch(() => { /* autoplay blocked, user clicks play */ });
+  // Wait for the new src to be loadable, then play. Calling play() immediately
+  // after load() races against the new source and gets rejected with AbortError.
+  const onReady = () => {
+    v.removeEventListener("loadeddata", onReady);
+    v.removeEventListener("error", onErr);
+    const p = v.play();
+    if (p && p.catch) p.catch(err => console.warn("autoplay blocked:", err && err.message));
+  };
+  const onErr = () => {
+    v.removeEventListener("loadeddata", onReady);
+    v.removeEventListener("error", onErr);
+    console.warn("video load failed:", name);
+  };
+  v.addEventListener("loadeddata", onReady);
+  v.addEventListener("error", onErr);
 }
 
 function updateStats() {
