@@ -211,7 +211,6 @@ function loadVideo() {
   const name = state.sampleNames[state.idx];
   const v = $("video");
   v.autoplay = true;
-  v.muted = true;
   v.src = state.videoBase + name + ".mp4";
   v.currentTime = 0;
   v.load();
@@ -219,8 +218,12 @@ function loadVideo() {
     const p = v.play();
     if (p && typeof p.catch === "function") {
       p.catch(() => {
-        $("pillStatus").textContent = "自动播放被浏览器阻止：点一次视频后再切换";
-        $("pillStatus").style.color = "#ffe1e8";
+        // 如果带声音自动播放被拦,试一次静音自动播放
+        v.muted = true;
+        v.play().catch(() => {
+          $("pillStatus").textContent = "自动播放被浏览器阻止：点一次视频后再切换";
+          $("pillStatus").style.color = "#ffe1e8";
+        });
       });
     }
   } catch (_) {
