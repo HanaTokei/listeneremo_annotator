@@ -44,6 +44,7 @@ const state = {
   data: {},          // full edited data (deep copy of SAMPLES)
   videoBase: DEFAULT_VIDEO_BASE,
   dirtyPaths: {},    // sampleName -> Set<path>
+  blobCache: {},     // sampleName -> objectURL (mirrors main app's pattern)
 };
 
 const $ = (id) => document.getElementById(id);
@@ -207,23 +208,35 @@ function render() {
   renderForm();
 }
 
-function loadVideo() {
+async function loadVideo() {
   const name = state.sampleNames[state.idx];
+  if (!name) return;
+  const src = state.videoBase + name + ".mp4";
+  let url = state.blobCache[name];
+  if (!url) {
+    try {
+      const resp = await fetch(src);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const blob = await resp.blob();
+      url = URL.createObjectURL(blob);
+      state.blobCache[name] = url;
+    } catch (e) {
+      $("pillStatus").textContent = "加载失败: " + e.message;
+      $("pillStatus").style.color = "#ffe1e8";
+      return;
+    }
+  }
   const v = $("video");
   v.autoplay = true;
-  v.src = state.videoBase + name + ".mp4";
+  v.src = url;
   v.currentTime = 0;
   v.load();
   try {
     const p = v.play();
     if (p && typeof p.catch === "function") {
       p.catch(() => {
-        // 如果带声音自动播放被拦,试一次静音自动播放
-        v.muted = true;
-        v.play().catch(() => {
-          $("pillStatus").textContent = "自动播放被浏览器阻止：点一次视频后再切换";
-          $("pillStatus").style.color = "#ffe1e8";
-        });
+        $("pillStatus").textContent = "自动播放被浏览器阻止：点一次视频后再切换";
+        $("pillStatus").style.color = "#ffe1e8";
       });
     }
   } catch (_) {
