@@ -45,6 +45,7 @@ const state = {
   videoBase: DEFAULT_VIDEO_BASE,
   dirtyPaths: {},    // sampleName -> Set<path>
   blobCache: {},     // sampleName -> objectURL (mirrors main app's pattern)
+  userInteracted: false,  // 标记用户是否已点过 ←/→(之后才自动播,带声音)
 };
 
 const $ = (id) => document.getElementById(id);
@@ -146,8 +147,8 @@ function init() {
     loadVideo();
   });
 
-  $("btnPrev").addEventListener("click", () => goto(state.idx - 1));
-  $("btnNext").addEventListener("click", () => goto(state.idx + 1));
+  $("btnPrev").addEventListener("click", () => { state.userInteracted = true; goto(state.idx - 1); });
+  $("btnNext").addEventListener("click", () => { state.userInteracted = true; goto(state.idx + 1); });
   $("btnJump").addEventListener("click", () => {
     const v = parseInt($("inpJump").value, 10);
     if (Number.isFinite(v)) goto(v - 1);
@@ -228,21 +229,18 @@ async function loadVideo() {
     }
   }
   const v = $("video");
-  v.autoplay = true;
   v.src = url;
   v.currentTime = 0;
   v.load();
-  try {
-    const p = v.play();
-    if (p && typeof p.catch === "function") {
-      p.catch(() => {
-        $("pillStatus").textContent = "自动播放被阻止: 点一次视频后再切换";
-        $("pillStatus").style.color = "#ffe1e8";
-      });
-    }
-  } catch (_) {
-    $("pillStatus").textContent = "自动播放失败: 点一次视频后再切换";
+  // 第一个视频不自动播(Chrome 首次会强制静音),等用户点过一次 ←/→ 之后才自动播
+  if (!state.userInteracted) {
+    $("pillStatus").textContent = "▶ 点视频播放(首次 Chrome 策略会静音)";
+    return;
   }
+  v.play().catch(() => {
+    $("pillStatus").textContent = "自动播放被阻止: 点一次视频";
+    $("pillStatus").style.color = "#ffe1e8";
+  });
 }
 
 function updateStats() {
