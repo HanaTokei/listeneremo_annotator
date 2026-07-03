@@ -180,6 +180,7 @@ function onGlobalKey(e) {
   if (e.key === "ArrowLeft") { e.preventDefault(); goto(state.idx - 1); }
   else if (e.key === "ArrowRight") { e.preventDefault(); goto(state.idx + 1); }
   else if (e.key === " ") { e.preventDefault(); const v = $("video"); v.paused ? v.play() : v.pause(); }
+  else if (e.key === "m" || e.key === "M") { const v = $("video"); v.muted = !v.muted; }
   else if (EMOTIONS.includes(["neutral","angry","happy","sad","worried","surprise"][parseInt(e.key,10)-1] || "")) {
     setPath(state.data.samples[state.sampleNames[state.idx]], "agreement_label", EMOTIONS[parseInt(e.key,10)-1]);
     markDirty(state.sampleNames[state.idx], "agreement_label");
@@ -228,6 +229,8 @@ async function loadVideo() {
   }
   const v = $("video");
   v.autoplay = true;
+  v.muted = false;
+  v.volume = 1.0;
   v.src = url;
   v.currentTime = 0;
   v.load();
@@ -235,7 +238,10 @@ async function loadVideo() {
     const p = v.play();
     if (p && typeof p.catch === "function") {
       p.catch(() => {
-        $("pillStatus").textContent = "自动播放被浏览器阻止：点一次视频后再切换";
+        // Chrome 强制静音自动播放,接受这个状态,提示用户点一下解除
+        v.muted = true;
+        v.play().catch(() => {});
+        $("pillStatus").textContent = "已自动静音(浏览器策略): 点视频或按 M 解除";
         $("pillStatus").style.color = "#ffe1e8";
       });
     }
