@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MER2026 Track1 - combined_top572 修正标注</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      .origLabel {
+        font-size: 26px;
+        font-weight: 800;
+        color: var(--brand);
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: rgba(90, 167, 255, 0.10);
+        border: 1px solid rgba(90, 167, 255, 0.30);
+        letter-spacing: 0.3px;
+        text-align: center;
+      }
+      .origLabel--disagree { color: var(--danger); border-color: rgba(255, 90, 122, 0.35); background: rgba(255, 90, 122, 0.10); }
+      .origLabel--agree { color: var(--ok); border-color: rgba(47, 208, 123, 0.35); background: rgba(47, 208, 123, 0.10); }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar__left">
+        <div class="brand">
+          <div class="brand__title">combined_top572 修正标注</div>
+          <div class="brand__sub">观看视频 → 对照原 label → 给出人工修正（可导出 CSV）</div>
+        </div>
+      </div>
+      <div class="topbar__right">
+        <label class="btn btn--ghost">
+          导入CSV
+          <input id="fileImportCsv" type="file" accept=".csv,text/csv" hidden />
+        </label>
+        <button id="btnExportCsv" class="btn btn--ghost" disabled>导出CSV</button>
+        <button id="btnResetLocal" class="btn btn--danger" title="清空本页面的本地修正缓存">清空缓存</button>
+        <a class="btn btn--ghost" href="../">返回主页</a>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="videoPane">
+        <div class="videoPane__meta">
+          <div class="metaRow">
+            <div class="pill" id="pillStatus">加载中...</div>
+            <div class="metaText" id="metaName">—</div>
+          </div>
+          <div class="metaRow metaRow--small">
+            <div class="metaHint" id="metaFileName"></div>
+            <div class="metaHint" id="metaIdx">—</div>
+          </div>
+        </div>
+
+        <div class="videoWrap">
+          <video id="video" controls playsinline preload="metadata"></video>
+        </div>
+
+        <div class="navRow">
+          <button id="btnPrev" class="btn btn--ghost" disabled>← 上一个</button>
+          <div class="navRow__center">
+            <label class="jump">
+              跳转到
+              <input id="inpJump" type="number" min="1" step="1" placeholder="idx" />
+            </label>
+            <button id="btnJump" class="btn btn--ghost" disabled>Go</button>
+          </div>
+          <button id="btnNext" class="btn btn--ghost" disabled>下一个 →</button>
+        </div>
+
+        <div class="kbdHelp">
+          快捷键：<code>←/→</code> 上一个/下一个，<code>Space</code> 播放暂停，
+          <code>1-6</code> 选修正情绪，<code>0</code> 同意原label（修正=原label），
+          <code>C</code> 置信度循环，<code>X</code> 清空当前修正
+        </div>
+      </section>
+
+      <section class="formPane">
+        <div class="card">
+          <div class="card__title">原 label（不可改）</div>
+          <div class="field">
+            <div class="field__label" id="origIdx">—</div>
+            <div id="origLabelDisplay" class="origLabel">—</div>
+          </div>
+          <div class="field__hint">
+            来自 <code>combined_top572_not_legacy1549_names.txt</code>，本页面只读，仅供对照。
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">人工修正 label</div>
+
+          <div class="field">
+            <div class="field__label">修正情绪（s2_corr_label）</div>
+            <div class="grid2">
+              <label class="chip"><input type="radio" name="corr" value="1" /> 1 neutral</label>
+              <label class="chip"><input type="radio" name="corr" value="2" /> 2 angry</label>
+              <label class="chip"><input type="radio" name="corr" value="3" /> 3 happy</label>
+              <label class="chip"><input type="radio" name="corr" value="4" /> 4 sad</label>
+              <label class="chip"><input type="radio" name="corr" value="5" /> 5 worried</label>
+              <label class="chip"><input type="radio" name="corr" value="6" /> 6 surprise</label>
+            </div>
+            <div class="row">
+              <button id="btnAgreeOrig" class="btn btn--tiny" type="button" title="把修正 label 设成原 label">同意原label</button>
+              <button id="btnClearCorr" class="btn btn--tiny" type="button">清空修正</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field__label">置信度（s2_corr_confidence）</div>
+            <div class="radioRow">
+              <label class="radio"><input type="radio" name="conf" value="3" /> 3（很确定）</label>
+              <label class="radio"><input type="radio" name="conf" value="2" /> 2（一般确定）</label>
+              <label class="radio"><input type="radio" name="conf" value="1" /> 1（不确定/边界）</label>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field__label">备注（corr_notes，可选）</div>
+            <textarea id="txtNotes" rows="5" placeholder="写你修正的理由，比如“原label=neutral但实际明确是angry”“看不到听者无法判断”等"></textarea>
+          </div>
+
+          <div class="divider"></div>
+          <div class="stats">
+            <div class="stat">
+              <div class="stat__k">已修正</div>
+              <div class="stat__v" id="statCorrected">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat__k">待修正</div>
+              <div class="stat__v" id="statPending">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat__k">同意原label</div>
+              <div class="stat__v" id="statAgree">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card--small">
+          <div class="card__title">说明</div>
+          <ul class="bullets">
+            <li>本子页面对 combined_top572 463 条视频做人工修正，原始 label 仅作对照不可改。</li>
+            <li>修正结果自动存 localStorage（key=<code>combined_top572_corrections_v1</code>），可导出 CSV 复用。</li>
+            <li>若本页面"未加载"，说明 data/ 下 H.264 视频还没上传到 GitHub。</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <script src="./video_list.json"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
