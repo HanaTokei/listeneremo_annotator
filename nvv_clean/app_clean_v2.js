@@ -167,9 +167,8 @@ function normalizeSample(row, seq, sourceName) {
 }
 
 function defaultSamples() {
-  const data = window.NVV_AUDIT_DATA && Array.isArray(window.NVV_AUDIT_DATA.samples)
-    ? window.NVV_AUDIT_DATA.samples
-    : [];
+  const auditData = typeof NVV_AUDIT_DATA !== "undefined" ? NVV_AUDIT_DATA : null;
+  const data = auditData && Array.isArray(auditData.samples) ? auditData.samples : [];
   return data.map((s, i) => {
     const row = { ...s, audio_url: s.audio ? `../nvv_audit/${s.audio}` : "" };
     return normalizeSample(row, i + 1, "bundled_nvv_audit");
