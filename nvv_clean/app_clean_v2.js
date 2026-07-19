@@ -281,7 +281,7 @@ function render() {
 
   const sample = state.filtered[state.idx];
   const record = getRecord(sample);
-  const corrected = record.corrected_label || "";
+  const corrected = record.corrected_label || sample.label || "";
   const audioSrc = resolveAudioSrc(sample);
 
   $("metaName").textContent = `${sample.clean_id} | ${sample.dataset || "-"} | ${sample.audit_bucket || "-"}`;
