@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NVVSpeech Track1 听审</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand__title">NVVSpeech Track1 听审</div>
+        <div class="brand__sub">人工复核 GT 可闻性、标签位置、模型错误类型和验证集保留决策</div>
+      </div>
+      <div class="topbar__right">
+        <label class="btn btn--ghost">
+          导入 CSV
+          <input id="fileImportCsv" type="file" accept=".csv,text/csv" hidden />
+        </label>
+        <button id="btnExportCsv" class="btn btn--ghost">导出 CSV</button>
+        <button id="btnResetLocal" class="btn btn--danger">清空缓存</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="audioPane">
+        <div class="metaCard">
+          <div class="metaRow">
+            <div class="pill" id="pillStatus">加载中</div>
+            <div class="metaTitle" id="metaName">-</div>
+          </div>
+          <div class="metaRow metaRow--small">
+            <div class="metaHint" id="metaPathHint"></div>
+            <div class="metaHint" id="metaProgress"></div>
+          </div>
+        </div>
+
+        <div class="playerCard">
+          <audio id="audio" controls preload="metadata"></audio>
+          <div class="navRow">
+            <button id="btnPrev" class="btn btn--ghost">上一条</button>
+            <div class="navRow__center">
+              <label class="jump">
+                跳转
+                <input id="inpJump" type="number" min="1" step="1" />
+              </label>
+              <button id="btnJump" class="btn btn--ghost">Go</button>
+            </div>
+            <button id="btnNext" class="btn btn--ghost">下一条</button>
+          </div>
+          <div class="kbdHelp">
+            快捷键：<code>←/→</code> 上一条/下一条，<code>Space</code> 播放暂停，
+            <code>1/2/3</code> GT 可闻 是/否/不确定，<code>K</code> 保留，<code>D</code> 剔除
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">原始文本与模型输出</div>
+          <div class="textBlock">
+            <div class="textBlock__label">GT label</div>
+            <div id="txtLabel" class="transcript"></div>
+          </div>
+          <div class="textBlock">
+            <div class="textBlock__label">Prediction</div>
+            <div id="txtPrediction" class="transcript"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">机器诊断</div>
+          <div class="diagGrid">
+            <div><span>GT</span><code id="diagGtTags"></code></div>
+            <div><span>Pred</span><code id="diagPredTags"></code></div>
+            <div><span>FN</span><code id="diagFnTags"></code></div>
+            <div><span>FP</span><code id="diagFpTags"></code></div>
+            <div><span>same-tag far</span><code id="diagSameFar"></code></div>
+            <div><span>wrong-tag near</span><code id="diagWrongNear"></code></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="formPane">
+        <div class="card">
+          <div class="card__title">听审填写</div>
+
+          <div class="field">
+            <div class="field__label">GT 标签是否可闻</div>
+            <div class="chipRow" data-group="gt_audible">
+              <button class="chip" data-value="yes">是</button>
+              <button class="chip" data-value="no">否</button>
+              <button class="chip" data-value="uncertain">不确定</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field__label">GT 标签位置是否合理</div>
+            <div class="chipRow" data-group="gt_position_ok">
+              <button class="chip" data-value="yes">合理</button>
+              <button class="chip" data-value="no">不合理</button>
+              <button class="chip" data-value="uncertain">不确定</button>
+              <button class="chip" data-value="na">不适用</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field__label">主要错误类型</div>
+            <select id="selPredError">
+              <option value=""></option>
+              <option value="model_miss">模型漏检</option>
+              <option value="wrong_tag">错类/混淆</option>
+              <option value="position_shift">位置漂移</option>
+              <option value="asr_error">ASR 文本错导致</option>
+              <option value="gt_bad">GT 不可闻或标注错误</option>
+              <option value="acceptable_alt">相邻标签可接受</option>
+              <option value="multiple">多种错误混合</option>
+              <option value="unclear">无法判断</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <div class="field__label">是否保留为验证样本</div>
+            <div class="chipRow" data-group="keep_for_validation">
+              <button class="chip" data-value="yes">保留</button>
+              <button class="chip" data-value="no">剔除</button>
+              <button class="chip" data-value="uncertain">待定</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field__label">修正标签 / 修正说明</div>
+            <input id="inpCorrectedLabel" type="text" placeholder="[breath] -> [hum] / remove tag / position shift ..." />
+          </div>
+
+          <div class="field">
+            <div class="field__label">备注</div>
+            <textarea id="txtNotes" rows="6"></textarea>
+          </div>
+        </div>
+
+        <div class="card card--small">
+          <div class="card__title">筛选</div>
+          <div class="filterGrid">
+            <label>
+              来源
+              <select id="filterSource"></select>
+            </label>
+            <label>
+              数据集
+              <select id="filterDataset"></select>
+            </label>
+            <label>
+              bucket
+              <select id="filterBucket"></select>
+            </label>
+            <label>
+              状态
+              <select id="filterStatus">
+                <option value="">全部</option>
+                <option value="todo">未填</option>
+                <option value="done">已填</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="card card--small">
+          <div class="card__title">统计</div>
+          <div class="stats">
+            <div class="stat"><span>筛选后</span><b id="statFiltered">0</b></div>
+            <div class="stat"><span>已填写</span><b id="statDone">0</b></div>
+            <div class="stat"><span>保留</span><b id="statKeep">0</b></div>
+            <div class="stat"><span>剔除</span><b id="statDrop">0</b></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./samples.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
