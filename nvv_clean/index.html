@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NVVSpeech 人工清洗</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand__title">NVVSpeech 人工清洗</div>
+        <div class="brand__sub">修正 GT 文本与非言语标签，导出可追溯 cleaned JSONL / CSV</div>
+      </div>
+      <div class="topbar__right">
+        <label class="btn btn--ghost" title="导入 JSONL、JSON 或 CSV 清洗清单">
+          导入清单
+          <input id="fileImportManifest" type="file" accept=".jsonl,.json,.csv,application/json,text/csv,text/plain" hidden />
+        </label>
+        <label class="btn btn--ghost" title="选择本机音频目录，用文件名匹配清单中的 path/audio">
+          音频目录
+          <input id="fileAudioDir" type="file" webkitdirectory directory multiple hidden />
+        </label>
+        <button id="btnExportJsonl" class="btn btn--primary">导出 JSONL</button>
+        <button id="btnExportCsv" class="btn btn--ghost">导出 CSV</button>
+        <button id="btnResetLocal" class="btn btn--danger">清空缓存</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="workPane">
+        <div class="metaCard">
+          <div class="metaRow">
+            <div id="pillStatus" class="pill">加载中</div>
+            <div id="metaName" class="metaTitle">-</div>
+          </div>
+          <div class="metaRow metaRow--small">
+            <div id="metaPathHint" class="metaHint"></div>
+            <div id="metaProgress" class="metaHint"></div>
+          </div>
+        </div>
+
+        <div class="playerCard">
+          <audio id="audio" controls preload="metadata"></audio>
+          <div class="navRow">
+            <button id="btnPrev" class="btn btn--ghost">上一条</button>
+            <div class="navRow__center">
+              <label class="jump">
+                跳转
+                <input id="inpJump" type="number" min="1" step="1" />
+              </label>
+              <button id="btnJump" class="btn btn--ghost">Go</button>
+              <label class="check">
+                <input id="chkAutoNext" type="checkbox" />
+                保存后下一条
+              </label>
+            </div>
+            <button id="btnNext" class="btn btn--ghost">下一条</button>
+          </div>
+        </div>
+
+        <div class="compareGrid">
+          <section class="card">
+            <div class="card__titleRow">
+              <div class="card__title">原始 GT</div>
+              <button id="btnCopyGt" class="btn btn--tiny" type="button">复制到修正版</button>
+            </div>
+            <div id="txtOriginalLabel" class="transcript"></div>
+          </section>
+
+          <section class="card">
+            <div class="card__titleRow">
+              <div class="card__title">模型输出</div>
+              <button id="btnCopyPred" class="btn btn--tiny" type="button">复制到修正版</button>
+            </div>
+            <div id="txtPrediction" class="transcript"></div>
+          </section>
+        </div>
+
+        <section class="card">
+          <div class="card__titleRow">
+            <div class="card__title">修正版标签文本</div>
+            <button id="btnStripTags" class="btn btn--tiny" type="button">去除标签</button>
+          </div>
+          <textarea id="txtCorrectedLabel" class="editor" rows="7" spellcheck="false"></textarea>
+          <div id="tagPalette" class="tagPalette"></div>
+        </section>
+
+        <section class="card">
+          <div class="card__title">样本信息</div>
+          <div class="infoGrid">
+            <div><span>数据集</span><code id="infoDataset"></code></div>
+            <div><span>来源</span><code id="infoSource"></code></div>
+            <div><span>bucket</span><code id="infoBucket"></code></div>
+            <div><span>utt_id</span><code id="infoUtt"></code></div>
+            <div><span>GT tags</span><code id="infoGtTags"></code></div>
+            <div><span>Pred tags</span><code id="infoPredTags"></code></div>
+          </div>
+        </section>
+      </section>
+
+      <aside class="sidePane">
+        <section class="card">
+          <div class="card__title">清洗决策</div>
+
+          <div class="field">
+            <div class="field__label">样本处理</div>
+            <div class="chipRow" data-group="decision">
+              <button class="chip chip--keep" data-value="keep">保留原样</button>
+              <button class="chip chip--fix" data-value="fix">修正后保留</button>
+              <button class="chip chip--drop" data-value="drop">剔除</button>
+              <button class="chip" data-value="uncertain">待定</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field__label">GT 问题类型</div>
+            <select id="selGtStatus">
+              <option value=""></option>
+              <option value="clean">GT 正确</option>
+              <option value="wrong_text">文字错</option>
+              <option value="wrong_tag">标签类别错</option>
+              <option value="tag_not_audible">标签不可闻</option>
+              <option value="missing_tag">漏标非言语</option>
+              <option value="position_shift">标签位置偏</option>
+              <option value="audio_bad">音频坏/截断/噪声太重</option>
+              <option value="uncertain">听不准</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <div class="field__label">用途</div>
+            <div class="chipRow" data-group="split_use">
+              <button class="chip" data-value="train">训练</button>
+              <button class="chip" data-value="val">验证</button>
+              <button class="chip" data-value="both">训练+验证</button>
+              <button class="chip" data-value="none">不用</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field__label">备注</div>
+            <textarea id="txtNotes" rows="5"></textarea>
+          </div>
+
+          <div class="buttonGrid">
+            <button id="btnMarkKeep" class="btn btn--ok" type="button">保留</button>
+            <button id="btnMarkFix" class="btn btn--primary" type="button">修正保留</button>
+            <button id="btnMarkDrop" class="btn btn--danger" type="button">剔除</button>
+          </div>
+        </section>
+
+        <section class="card card--small">
+          <div class="card__title">筛选</div>
+          <div class="filterGrid">
+            <label>
+              搜索
+              <input id="filterSearch" type="text" placeholder="id / dataset / 文本" />
+            </label>
+            <label>
+              数据集
+              <select id="filterDataset"></select>
+            </label>
+            <label>
+              处理
+              <select id="filterDecision">
+                <option value="">全部</option>
+                <option value="todo">未处理</option>
+                <option value="keep">保留原样</option>
+                <option value="fix">修正后保留</option>
+                <option value="drop">剔除</option>
+                <option value="uncertain">待定</option>
+              </select>
+            </label>
+            <label>
+              GT 状态
+              <select id="filterGtStatus"></select>
+            </label>
+            <label>
+              标签
+              <select id="filterTag"></select>
+            </label>
+            <label>
+              音频
+              <select id="filterAudio">
+                <option value="">全部</option>
+                <option value="ready">可播放</option>
+                <option value="missing">未匹配</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="card card--small">
+          <div class="card__title">统计</div>
+          <div class="stats">
+            <div class="stat"><span>当前</span><b id="statFiltered">0</b></div>
+            <div class="stat"><span>已处理</span><b id="statDone">0</b></div>
+            <div class="stat"><span>保留</span><b id="statKeep">0</b></div>
+            <div class="stat"><span>修正</span><b id="statFix">0</b></div>
+            <div class="stat"><span>剔除</span><b id="statDrop">0</b></div>
+            <div class="stat"><span>待定</span><b id="statUncertain">0</b></div>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <script src="../nvv_audit/samples.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
