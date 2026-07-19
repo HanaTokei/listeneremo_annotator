@@ -143,8 +143,8 @@ function normalizeSample(row, seq, sourceName) {
   const prediction = row.prediction || row.pred || row.hypothesis || row.model_output || "";
   const audioBase = basename(audio || path);
   let audioUrl = "";
-  if (isHttpUrl(audio)) audioUrl = audio;
-  if (row.audio_url && isHttpUrl(row.audio_url)) audioUrl = row.audio_url;
+  if (row.audio_url) audioUrl = row.audio_url;
+  else if (isHttpUrl(audio)) audioUrl = audio;
 
   return {
     clean_id: String(id),
